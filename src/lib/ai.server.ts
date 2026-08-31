@@ -13,7 +13,7 @@ export type TripBrief = {
 
 function extractJson(text: string): unknown {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = fenced ? fenced[1] : text;
+  const raw = fenced?.[1] ?? text;
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("The AI response was not valid JSON.");
