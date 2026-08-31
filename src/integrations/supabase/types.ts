@@ -14,7 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      discover_posts: {
+        Row: {
+          country: string | null
+          cover_image_url: string | null
+          created_at: string
+          days_count: number | null
+          description: string | null
+          destination: string | null
+          id: string
+          itinerary_id: string | null
+          tags: string[]
+          title: string
+          user_id: string
+        }
+        Insert: {
+          country?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          days_count?: number | null
+          description?: string | null
+          destination?: string | null
+          id?: string
+          itinerary_id?: string | null
+          tags?: string[]
+          title: string
+          user_id: string
+        }
+        Update: {
+          country?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          days_count?: number | null
+          description?: string | null
+          destination?: string | null
+          id?: string
+          itinerary_id?: string | null
+          tags?: string[]
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discover_posts_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "itineraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itineraries: {
+        Row: {
+          budget_range: string | null
+          created_at: string
+          destination: string
+          end_date: string | null
+          id: string
+          interests: string[]
+          is_public: boolean
+          itinerary_data: Json
+          pax_adults: number
+          pax_children: number
+          share_token: string
+          start_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_range?: string | null
+          created_at?: string
+          destination: string
+          end_date?: string | null
+          id?: string
+          interests?: string[]
+          is_public?: boolean
+          itinerary_data?: Json
+          pax_adults?: number
+          pax_children?: number
+          share_token?: string
+          start_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_range?: string | null
+          created_at?: string
+          destination?: string
+          end_date?: string | null
+          id?: string
+          interests?: string[]
+          is_public?: boolean
+          itinerary_data?: Json
+          pax_adults?: number
+          pax_children?: number
+          share_token?: string
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          name?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
