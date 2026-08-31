@@ -67,7 +67,10 @@ function TripPage() {
       .update({ itinerary_data: draft as never })
       .eq("id", id);
     setBusy(null);
-    if (error) return toast.error("Could not save your itinerary.");
+    if (error) {
+      toast.error("Could not save your itinerary.");
+      return;
+    }
     setDirty(false);
     void queryClient.invalidateQueries({ queryKey: ["trip", id] });
     toast.success("Itinerary saved");
@@ -79,7 +82,10 @@ function TripPage() {
       .from("itineraries")
       .update({ is_public: true })
       .eq("id", trip.id);
-    if (error) return toast.error("Could not create a share link.");
+    if (error) {
+      toast.error("Could not create a share link.");
+      return;
+    }
     const url = `${window.location.origin}/share/${trip.share_token}`;
     try {
       await navigator.clipboard.writeText(url);
