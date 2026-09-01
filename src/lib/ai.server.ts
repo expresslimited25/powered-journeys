@@ -1,5 +1,5 @@
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.7-flash";
+const MODEL = "openai/gpt-5.6-sol";
 
 export type TripBrief = {
   destination: string;
@@ -32,6 +32,7 @@ export async function callAi(system: string, user: string): Promise<unknown> {
     },
     body: JSON.stringify({
       model: MODEL,
+      reasoning_effort: "none",
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },

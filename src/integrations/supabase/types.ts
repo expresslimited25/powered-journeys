@@ -62,6 +62,13 @@ export type Database = {
             referencedRelation: "itineraries"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "discover_posts_profile_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       itineraries: {
