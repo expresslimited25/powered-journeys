@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       discover_posts: {
         Row: {
           country: string | null
@@ -78,6 +96,105 @@ export type Database = {
           },
         ]
       }
+      generation_jobs: {
+        Row: {
+          attempts: number
+          brief: Json
+          brief_hash: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          itinerary_id: string | null
+          max_attempts: number
+          result: Json | null
+          started_at: string | null
+          status: string
+          target_itinerary_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          brief: Json
+          brief_hash: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          itinerary_id?: string | null
+          max_attempts?: number
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          target_itinerary_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          brief?: Json
+          brief_hash?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          itinerary_id?: string | null
+          max_attempts?: number
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          target_itinerary_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "itineraries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_target_itinerary_id_fkey"
+            columns: ["target_itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "itineraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generation_usage: {
+        Row: {
+          daily_count: number
+          daily_date: string
+          last_used_at: string | null
+          monthly_count: number
+          monthly_date: string
+          total_count: number
+          user_id: string
+        }
+        Insert: {
+          daily_count?: number
+          daily_date?: string
+          last_used_at?: string | null
+          monthly_count?: number
+          monthly_date?: string
+          total_count?: number
+          user_id: string
+        }
+        Update: {
+          daily_count?: number
+          daily_date?: string
+          last_used_at?: string | null
+          monthly_count?: number
+          monthly_date?: string
+          total_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       itineraries: {
         Row: {
           budget_range: string | null
@@ -132,6 +249,51 @@ export type Database = {
         }
         Relationships: []
       }
+      itinerary_cache: {
+        Row: {
+          brief_hash: string
+          budget_range: string | null
+          created_at: string
+          destination: string
+          end_date: string | null
+          expires_at: string
+          hit_count: number
+          interests: string[]
+          itinerary_data: Json
+          pax_adults: number
+          pax_children: number
+          start_date: string | null
+        }
+        Insert: {
+          brief_hash: string
+          budget_range?: string | null
+          created_at?: string
+          destination: string
+          end_date?: string | null
+          expires_at?: string
+          hit_count?: number
+          interests?: string[]
+          itinerary_data: Json
+          pax_adults?: number
+          pax_children?: number
+          start_date?: string | null
+        }
+        Update: {
+          brief_hash?: string
+          budget_range?: string | null
+          created_at?: string
+          destination?: string
+          end_date?: string | null
+          expires_at?: string
+          hit_count?: number
+          interests?: string[]
+          itinerary_data?: Json
+          pax_adults?: number
+          pax_children?: number
+          start_date?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -178,7 +340,17 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      claim_generation_job: {
+        Args: { _job_id: string }
+        Returns: {
+          attempts: number
+          brief: Json
+          brief_hash: string
+          id: string
+          user_id: string
+        }[]
+      }
+      record_generation_attempt: { Args: { _user_id: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
