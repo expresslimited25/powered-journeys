@@ -64,10 +64,18 @@ function DiscoverPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("discover_posts")
-        .select("*, itineraries(share_token, is_public), profiles(name, avatar_url)")
+        .select("*, itineraries(share_token, is_public)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as Post[];
+      const rows = (data ?? []) as unknown as Post[];
+      const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
+      if (userIds.length === 0) return rows;
+      const { data: profiles } = await supabase
+        .from("public_profiles")
+        .select("id, name, avatar_url")
+        .in("id", userIds);
+      const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+      return rows.map((r) => ({ ...r, profiles: byId.get(r.user_id) ?? null }));
     },
   });
 
