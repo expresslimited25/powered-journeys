@@ -87,13 +87,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "discover_posts_profile_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       generation_jobs: {
@@ -318,26 +311,30 @@ export type Database = {
         }
         Relationships: []
       }
-    }
-    Views: {
       public_profiles: {
         Row: {
           avatar_url: string | null
-          id: string | null
+          id: string
           name: string | null
+          updated_at: string
         }
         Insert: {
           avatar_url?: string | null
-          id?: string | null
+          id: string
           name?: string | null
+          updated_at?: string
         }
         Update: {
           avatar_url?: string | null
-          id?: string | null
+          id?: string
           name?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
+    }
+    Views: {
+      [_ in never]: never
     }
     Functions: {
       claim_generation_job: {
