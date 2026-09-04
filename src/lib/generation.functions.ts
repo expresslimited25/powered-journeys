@@ -3,6 +3,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildItinerary, type TripBrief } from "@/lib/ai.server";
 import type { ItineraryData } from "@/lib/itinerary";
 import type { Json } from "@/integrations/supabase/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
+type WandrSupabase = SupabaseClient<Database>;
 
 const MAX_DAILY = 5;
 const MAX_MONTHLY = 50;
@@ -28,11 +32,7 @@ async function hashBrief(brief: TripBrief): Promise<string> {
     .join("");
 }
 
-async function isPaused(supabase: {
-  from: (table: "app_config") => {
-    select: (...args: unknown[]) => Promise<{ data: { value: string } | null; error: Error | null }>;
-  };
-}) {
+async function isPaused(supabase: WandrSupabase) {
   const { data, error } = await supabase
     .from("app_config")
     .select("value")
@@ -45,7 +45,7 @@ async function isPaused(supabase: {
   return data?.value === "true";
 }
 
-async function setPaused(supabaseAdmin: { from: (table: "app_config") => { upsert: (values: unknown) => Promise<{ error: Error | null }> } }) {
+async function setPaused(supabaseAdmin: WandrSupabase) {
   const { error } = await supabaseAdmin.from("app_config").upsert({
     key: "generation_paused",
     value: "true",
@@ -54,15 +54,7 @@ async function setPaused(supabaseAdmin: { from: (table: "app_config") => { upser
   if (error) console.error("Failed to pause generation:", error.message);
 }
 
-async function createItineraryShell(
-  supabase: {
-    from: (table: "itineraries") => {
-      insert: (values: unknown) => { select: (cols: string) => Promise<{ data: { id: string }[] | null; error: Error | null }> };
-    };
-  },
-  userId: string,
-  brief: TripBrief,
-) {
+async function createItineraryShell(supabase: WandrSupabase, userId: string, brief: TripBrief) {
   const { data, error } = await supabase
     .from("itineraries")
     .insert({
@@ -75,7 +67,11 @@ async function createItineraryShell(
       pax_children: brief.children,
       interests: brief.interests,
       budget_range: brief.budget,
-      itinerary_data: { days: [], trip_title: brief.destination, destination: brief.destination } as unknown as Json,
+      itinerary_data: {
+        days: [],
+        trip_title: brief.destination,
+        destination: brief.destination,
+      } as unknown as Json,
       is_public: false,
     })
     .select("id");
@@ -85,11 +81,7 @@ async function createItineraryShell(
 }
 
 async function updateItineraryFromResult(
-  supabase: {
-    from: (table: "itineraries") => {
-      update: (values: unknown) => { eq: (col: string, val: string) => Promise<{ error: Error | null }> };
-    };
-  },
+  supabase: WandrSupabase,
   itineraryId: string,
   result: ItineraryData,
   brief: TripBrief,
@@ -107,11 +99,7 @@ async function updateItineraryFromResult(
 }
 
 async function writeCache(
-  supabase: {
-    from: (table: "itinerary_cache") => {
-      upsert: (values: unknown) => Promise<{ error: Error | null }>;
-    };
-  },
+  supabase: WandrSupabase,
   briefHash: string,
   brief: TripBrief,
   result: ItineraryData,
@@ -130,6 +118,8 @@ async function writeCache(
   });
   if (error) console.error("Failed to write cache:", error.message);
 }
+
+type UsageResult = { allowed: boolean; daily: number; monthly: number };
 
 export const submitGenerationJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -166,7 +156,12 @@ export const submitGenerationJob = createServerFn({ method: "POST" })
         .single();
       if (error) throw error;
 
-      await updateItineraryFromResult(supabase, itineraryId, cached.itinerary_data as unknown as ItineraryData, data.brief);
+      await updateItineraryFromResult(
+        supabase,
+        itineraryId,
+        cached.itinerary_data as unknown as ItineraryData,
+        data.brief,
+      );
 
       return { jobId: job.id, status: job.status, itineraryId: job.itinerary_id, errorMessage: job.error_message };
     }
@@ -175,9 +170,10 @@ export const submitGenerationJob = createServerFn({ method: "POST" })
       _user_id: userId,
     });
     if (usageError) throw usageError;
-    if (!usageResult?.allowed) {
+    const usage = (usageResult ?? {}) as UsageResult;
+    if (!usage.allowed) {
       throw new Error(
-        `Generation limit reached: ${usageResult.daily}/${MAX_DAILY} today, ${usageResult.monthly}/${MAX_MONTHLY} this month.`,
+        `Generation limit reached: ${usage.daily ?? "?"}/${MAX_DAILY} today, ${usage.monthly ?? "?"}/${MAX_MONTHLY} this month.`,
       );
     }
 
