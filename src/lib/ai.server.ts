@@ -1,3 +1,5 @@
+import type { ItineraryData } from "@/lib/itinerary";
+
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "openai/gpt-5.6-sol";
 
@@ -47,6 +49,14 @@ export async function callAi(system: string, user: string): Promise<unknown> {
   const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const content = json.choices?.[0]?.message?.content ?? "";
   return extractJson(content);
+}
+
+export async function buildItinerary(brief: TripBrief): Promise<ItineraryData> {
+  const result = (await callAi(ITINERARY_SYSTEM, itineraryPrompt(brief))) as ItineraryData;
+  if (!result || !Array.isArray(result.days)) {
+    throw new Error("The AI could not build an itinerary. Please try again.");
+  }
+  return result;
 }
 
 export function daysCount(start: string, end: string) {
