@@ -344,6 +344,7 @@ export type Database = {
           brief: Json
           brief_hash: string
           id: string
+          itinerary_id: string
           user_id: string
         }[]
       }
