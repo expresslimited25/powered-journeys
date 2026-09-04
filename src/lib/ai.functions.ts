@@ -1,23 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ItineraryData } from "@/lib/itinerary";
-import {
-  callAi,
-  INSPIRE_SYSTEM,
-  ITINERARY_SYSTEM,
-  itineraryPrompt,
-  type TripBrief,
-} from "@/lib/ai.server";
+import { buildItinerary, callAi, INSPIRE_SYSTEM, type TripBrief } from "@/lib/ai.server";
 
 export const generateItinerary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: TripBrief) => input)
   .handler(async ({ data }): Promise<ItineraryData> => {
-    const result = (await callAi(ITINERARY_SYSTEM, itineraryPrompt(data))) as ItineraryData;
-    if (!result || !Array.isArray(result.days)) {
-      throw new Error("The AI could not build an itinerary. Please try again.");
-    }
-    return result;
+    return buildItinerary(data);
   });
 
 export const inspireMe = createServerFn({ method: "POST" }).handler(async () => {
