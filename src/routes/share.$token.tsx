@@ -36,6 +36,8 @@ function SharedTrip() {
       if (error) throw error;
       return (data as unknown as TripRow) ?? null;
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   return (
