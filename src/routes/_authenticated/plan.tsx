@@ -11,8 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
-import { generateItinerary } from "@/lib/ai.functions";
+import { processMyGenerationJob, submitGenerationJob } from "@/lib/generation.functions";
 import { BUDGETS, INTERESTS, TRAVEL_TIPS, daysBetween } from "@/lib/itinerary";
 
 export const Route = createFileRoute("/_authenticated/plan")({
@@ -42,7 +41,8 @@ const STEPS = ["Destination", "Dates", "Travellers", "Interests", "Budget", "Rev
 
 function PlanPage() {
   const navigate = useNavigate();
-  const generate = useServerFn(generateItinerary);
+  const submitJob = useServerFn(submitGenerationJob);
+  const processJob = useServerFn(processMyGenerationJob);
 
   const [step, setStep] = useState(0);
   const [destination, setDestination] = useState("");
@@ -70,33 +70,31 @@ function PlanPage() {
   async function submit() {
     setLoading(true);
     try {
-      const data = await generate({
-        data: { destination, startDate, endDate, adults, children, interests, budget },
+      const job = await submitJob({
+        data: { brief: { destination, startDate, endDate, adults, children, interests, budget } },
       });
-      const { data: session } = await supabase.auth.getUser();
-      const userId = session.user?.id;
-      if (!userId) throw new Error("Session expired");
 
-      const { data: row, error } = await supabase
-        .from("itineraries")
-        .insert({
-          user_id: userId,
-          title: data.trip_title || `${destination} trip`,
-          destination,
-          start_date: startDate,
-          end_date: endDate,
-          pax_adults: adults,
-          pax_children: children,
-          interests,
-          budget_range: budget,
-          itinerary_data: data as never,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
+      if (job.status === "completed" && job.itineraryId) {
+        toast.success("Your itinerary is ready");
+        navigate({ to: "/trip/$id", params: { id: job.itineraryId } });
+        return;
+      }
 
-      toast.success("Your itinerary is ready");
-      navigate({ to: "/trip/$id", params: { id: row.id as string } });
+      let attempts = 0;
+      let current = await processJob({ data: undefined });
+      while (current && current.status !== "completed" && current.status !== "failed" && attempts < 4) {
+        attempts += 1;
+        await new Promise((r) => setTimeout(r, 3000));
+        current = await processJob({ data: undefined });
+      }
+
+      if (current?.status === "completed" && (current.itinerary_id ?? job.itineraryId)) {
+        toast.success("Your itinerary is ready");
+        navigate({ to: "/trip/$id", params: { id: (current.itinerary_id ?? job.itineraryId) as string } });
+        return;
+      }
+
+      throw new Error(current?.error_message ?? "The planner is busy right now. Please try again in a moment.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setLoading(false);
