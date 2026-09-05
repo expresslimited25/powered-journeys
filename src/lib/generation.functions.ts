@@ -76,8 +76,9 @@ async function createItineraryShell(supabase: WandrSupabase, userId: string, bri
     })
     .select("id");
   if (error) throw error;
-  if (!data || data.length === 0) throw new Error("Could not create itinerary shell.");
-  return data[0].id;
+  const row = data?.[0];
+  if (!row) throw new Error("Could not create itinerary shell.");
+  return row.id;
 }
 
 async function updateItineraryFromResult(
@@ -242,6 +243,10 @@ export const processMyGenerationJob = createServerFn({ method: "POST" })
     }
 
     const job = claimed[0];
+    if (!job) {
+      const { data: existing } = await supabase.from("generation_jobs").select("*").eq("id", pending.id).single();
+      return existing;
+    }
     const brief = job.brief as unknown as TripBrief;
 
     try {
@@ -300,7 +305,7 @@ export const getGenerationStats = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
 
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    const { data: isAdmin } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: boolean | null }>)("has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
 
     const { data: paused } = await supabase

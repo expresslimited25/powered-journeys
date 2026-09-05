@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { generateItinerary } from "@/lib/ai.functions";
+import { processMyGenerationJob, submitGenerationJob } from "@/lib/generation.functions";
 import { formatRange, type ItineraryData, type TripRow } from "@/lib/itinerary";
 
 export const Route = createFileRoute("/_authenticated/trip/$id")({
@@ -40,7 +40,8 @@ function TripPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const regenerate = useServerFn(generateItinerary);
+  const submitJob = useServerFn(submitGenerationJob);
+  const processJob = useServerFn(processMyGenerationJob);
 
   const [draft, setDraft] = useState<ItineraryData | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -100,23 +101,34 @@ function TripPage() {
     if (!trip) return;
     setBusy("regen");
     try {
-      const fresh = await regenerate({
-        data: {
-          destination: trip.destination,
-          startDate: trip.start_date ?? new Date().toISOString().slice(0, 10),
-          endDate: trip.end_date ?? new Date().toISOString().slice(0, 10),
-          adults: trip.pax_adults,
-          children: trip.pax_children,
-          interests: trip.interests ?? [],
-          budget: trip.budget_range,
-        },
-      });
-      const { error } = await supabase
-        .from("itineraries")
-        .update({ itinerary_data: fresh as never })
-        .eq("id", trip.id);
+      const brief = {
+        destination: trip.destination,
+        startDate: trip.start_date ?? new Date().toISOString().slice(0, 10),
+        endDate: trip.end_date ?? new Date().toISOString().slice(0, 10),
+        adults: trip.pax_adults,
+        children: trip.pax_children,
+        interests: trip.interests ?? [],
+        budget: trip.budget_range,
+      };
+
+      const job = await submitJob({ data: { brief, itineraryId: trip.id } });
+
+      if (job.status !== "completed") {
+        let attempts = 0;
+        let current = await processJob({ data: undefined });
+        while (current && current.status !== "completed" && current.status !== "failed" && attempts < 4) {
+          attempts += 1;
+          await new Promise((r) => setTimeout(r, 3000));
+          current = await processJob({ data: undefined });
+        }
+        if (current?.status !== "completed") {
+          throw new Error(current?.error_message ?? "The planner is busy right now. Please try again shortly.");
+        }
+      }
+
+      const { data: fresh, error } = await supabase.from("itineraries").select("*").eq("id", trip.id).single();
       if (error) throw error;
-      setDraft(fresh);
+      setDraft((fresh as unknown as TripRow).itinerary_data);
       setDirty(false);
       void queryClient.invalidateQueries({ queryKey: ["trip", id] });
       toast.success("Fresh itinerary generated");
