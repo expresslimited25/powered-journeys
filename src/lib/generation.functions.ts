@@ -177,6 +177,7 @@ export const submitGenerationJob = createServerFn({ method: "POST" })
         cached.itinerary_data as unknown as ItineraryData,
         data.brief,
       );
+      await attachCover(supabase, itineraryId, data.brief.destination);
 
       return { jobId: job.id, status: job.status, itineraryId: job.itinerary_id, errorMessage: job.error_message };
     }
@@ -280,6 +281,7 @@ export const processMyGenerationJob = createServerFn({ method: "POST" })
 
       if (job.itinerary_id) {
         await updateItineraryFromResult(supabase, job.itinerary_id, result, brief);
+        await attachCover(supabase, job.itinerary_id, result.destination ?? brief.destination);
       }
 
       const { data: completedJob } = await supabase.from("generation_jobs").select("*").eq("id", job.id).single();
