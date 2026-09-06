@@ -61,6 +61,7 @@ export function TripCard({ trip }: { trip: TripRow }) {
             <Users className="size-3.5" /> {trip.pax_adults + trip.pax_children} pax
           </span>
         </div>
+        </div>
       </Card>
     </Link>
   );
