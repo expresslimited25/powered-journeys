@@ -316,6 +316,31 @@ export const processMyGenerationJob = createServerFn({ method: "POST" })
     }
   });
 
+export const getMyGenerationUsage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("generation_usage")
+      .select("daily_count, daily_date, monthly_count, monthly_date, total_count")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const today = new Date().toISOString().slice(0, 10);
+    const thisMonth = today.slice(0, 7);
+    const daily = data && data.daily_date === today ? data.daily_count : 0;
+    const monthly =
+      data && String(data.monthly_date).slice(0, 7) === thisMonth ? data.monthly_count : 0;
+
+    return {
+      daily,
+      monthly,
+      total: data?.total_count ?? 0,
+      dailyLimit: MAX_DAILY,
+      monthlyLimit: MAX_MONTHLY,
+    };
+  });
+
 export const getGenerationStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
