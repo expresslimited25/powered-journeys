@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildItinerary, type TripBrief } from "@/lib/ai.server";
+import { ensureDestinationCover } from "@/lib/covers.server";
 import type { ItineraryData } from "@/lib/itinerary";
 import type { Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -121,6 +122,19 @@ async function writeCache(
 }
 
 type UsageResult = { allowed: boolean; daily: number; monthly: number };
+
+async function attachCover(supabase: WandrSupabase, itineraryId: string, destination: string) {
+  try {
+    const coverUrl = await ensureDestinationCover(destination);
+    const { error } = await supabase
+      .from("itineraries")
+      .update({ cover_image_url: coverUrl } as never)
+      .eq("id", itineraryId);
+    if (error) console.error("Failed to set cover:", error.message);
+  } catch (err) {
+    console.error("Cover generation skipped:", err instanceof Error ? err.message : err);
+  }
+}
 
 export const submitGenerationJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
