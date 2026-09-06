@@ -32,6 +32,27 @@ export type Database = {
         }
         Relationships: []
       }
+      destination_covers: {
+        Row: {
+          created_at: string
+          destination: string
+          image_url: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          image_url: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          image_url?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       discover_posts: {
         Row: {
           country: string | null
@@ -191,6 +212,7 @@ export type Database = {
       itineraries: {
         Row: {
           budget_range: string | null
+          cover_image_url: string | null
           created_at: string
           destination: string
           end_date: string | null
@@ -208,6 +230,7 @@ export type Database = {
         }
         Insert: {
           budget_range?: string | null
+          cover_image_url?: string | null
           created_at?: string
           destination: string
           end_date?: string | null
@@ -225,6 +248,7 @@ export type Database = {
         }
         Update: {
           budget_range?: string | null
+          cover_image_url?: string | null
           created_at?: string
           destination?: string
           end_date?: string | null
