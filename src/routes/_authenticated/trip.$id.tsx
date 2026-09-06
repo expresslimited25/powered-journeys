@@ -163,8 +163,16 @@ function TripPage() {
           <ArrowLeft className="size-4" /> Back
         </Button>
 
-        <Card className="border-none bg-hero-gradient p-6 text-navy-foreground shadow-lift">
-          <h1 className="font-display text-3xl">{trip.title}</h1>
+        <Card className="overflow-hidden border-none bg-hero-gradient p-0 text-navy-foreground shadow-lift">
+          {trip.cover_image_url ? (
+            <img
+              src={trip.cover_image_url}
+              alt={`${trip.destination} cover`}
+              className="h-44 w-full object-cover"
+            />
+          ) : null}
+          <div className="p-6">
+            <h1 className="font-display text-3xl">{trip.title}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-navy-foreground/80">
             <span className="inline-flex items-center gap-1.5">
               <MapPin className="size-4" /> {trip.destination}
@@ -180,6 +188,7 @@ function TripPage() {
                 <Globe2 className="size-4" /> Shared publicly
               </span>
             ) : null}
+          </div>
           </div>
         </Card>
 

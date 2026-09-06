@@ -40,6 +40,7 @@ export type TripRow = {
   interests: string[];
   budget_range: string | null;
   itinerary_data: ItineraryData;
+  cover_image_url: string | null;
   is_public: boolean;
   share_token: string;
   created_at: string;

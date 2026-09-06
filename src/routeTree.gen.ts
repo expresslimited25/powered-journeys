@@ -19,6 +19,7 @@ import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/p
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AuthenticatedTripIdRouteImport } from './routes/_authenticated/trip.$id'
+import { Route as ApiPublicCoversSplatRouteImport } from './routes/api/public/covers/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -69,6 +70,11 @@ const AuthenticatedTripIdRoute = AuthenticatedTripIdRouteImport.update({
   path: '/trip/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicCoversSplatRoute = ApiPublicCoversSplatRouteImport.update({
+  id: '/api/public/covers/$',
+  path: '/api/public/covers/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/share/$token': typeof ShareTokenRoute
   '/trip/$id': typeof AuthenticatedTripIdRoute
+  '/api/public/covers/$': typeof ApiPublicCoversSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/share/$token': typeof ShareTokenRoute
   '/trip/$id': typeof AuthenticatedTripIdRoute
+  '/api/public/covers/$': typeof ApiPublicCoversSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/share/$token': typeof ShareTokenRoute
   '/_authenticated/trip/$id': typeof AuthenticatedTripIdRoute
+  '/api/public/covers/$': typeof ApiPublicCoversSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/share/$token'
     | '/trip/$id'
+    | '/api/public/covers/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/share/$token'
     | '/trip/$id'
+    | '/api/public/covers/$'
   id:
     | '__root__'
     | '/'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/share/$token'
     | '/_authenticated/trip/$id'
+    | '/api/public/covers/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -147,6 +159,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   ShareTokenRoute: typeof ShareTokenRoute
+  ApiPublicCoversSplatRoute: typeof ApiPublicCoversSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTripIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/covers/$': {
+      id: '/api/public/covers/$'
+      path: '/api/public/covers/$'
+      fullPath: '/api/public/covers/$'
+      preLoaderRoute: typeof ApiPublicCoversSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -250,6 +270,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   ShareTokenRoute: ShareTokenRoute,
+  ApiPublicCoversSplatRoute: ApiPublicCoversSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

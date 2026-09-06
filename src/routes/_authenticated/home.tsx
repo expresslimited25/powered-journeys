@@ -39,8 +39,17 @@ function useTrips() {
 export function TripCard({ trip }: { trip: TripRow }) {
   return (
     <Link to="/trip/$id" params={{ id: trip.id }}>
-      <Card className="gap-2 p-4 transition-shadow hover:shadow-lift">
-        <p className="font-display text-lg leading-tight">{trip.title}</p>
+      <Card className="gap-2 overflow-hidden p-0 transition-shadow hover:shadow-lift">
+        {trip.cover_image_url ? (
+          <img
+            src={trip.cover_image_url}
+            alt={`${trip.destination} cover`}
+            loading="lazy"
+            className="h-32 w-full object-cover"
+          />
+        ) : null}
+        <div className="space-y-2 p-4">
+          <p className="font-display text-lg leading-tight">{trip.title}</p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <MapPin className="size-3.5" /> {trip.destination}
@@ -51,6 +60,7 @@ export function TripCard({ trip }: { trip: TripRow }) {
           <span className="inline-flex items-center gap-1.5">
             <Users className="size-3.5" /> {trip.pax_adults + trip.pax_children} pax
           </span>
+        </div>
         </div>
       </Card>
     </Link>

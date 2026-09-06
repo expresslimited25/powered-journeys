@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildItinerary, type TripBrief } from "@/lib/ai.server";
+import { ensureDestinationCover } from "@/lib/covers.server";
 import type { ItineraryData } from "@/lib/itinerary";
 import type { Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -122,6 +123,19 @@ async function writeCache(
 
 type UsageResult = { allowed: boolean; daily: number; monthly: number };
 
+async function attachCover(supabase: WandrSupabase, itineraryId: string, destination: string) {
+  try {
+    const coverUrl = await ensureDestinationCover(destination);
+    const { error } = await supabase
+      .from("itineraries")
+      .update({ cover_image_url: coverUrl } as never)
+      .eq("id", itineraryId);
+    if (error) console.error("Failed to set cover:", error.message);
+  } catch (err) {
+    console.error("Cover generation skipped:", err instanceof Error ? err.message : err);
+  }
+}
+
 export const submitGenerationJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { brief: TripBrief; itineraryId?: string }) => input)
@@ -163,6 +177,7 @@ export const submitGenerationJob = createServerFn({ method: "POST" })
         cached.itinerary_data as unknown as ItineraryData,
         data.brief,
       );
+      await attachCover(supabase, itineraryId, data.brief.destination);
 
       return { jobId: job.id, status: job.status, itineraryId: job.itinerary_id, errorMessage: job.error_message };
     }
@@ -266,6 +281,7 @@ export const processMyGenerationJob = createServerFn({ method: "POST" })
 
       if (job.itinerary_id) {
         await updateItineraryFromResult(supabase, job.itinerary_id, result, brief);
+        await attachCover(supabase, job.itinerary_id, result.destination ?? brief.destination);
       }
 
       const { data: completedJob } = await supabase.from("generation_jobs").select("*").eq("id", job.id).single();
@@ -298,6 +314,31 @@ export const processMyGenerationJob = createServerFn({ method: "POST" })
 
       return updatedJob;
     }
+  });
+
+export const getMyGenerationUsage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data } = await supabase
+      .from("generation_usage")
+      .select("daily_count, daily_date, monthly_count, monthly_date, total_count")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const today = new Date().toISOString().slice(0, 10);
+    const thisMonth = today.slice(0, 7);
+    const daily = data && data.daily_date === today ? data.daily_count : 0;
+    const monthly =
+      data && String(data.monthly_date).slice(0, 7) === thisMonth ? data.monthly_count : 0;
+
+    return {
+      daily,
+      monthly,
+      total: data?.total_count ?? 0,
+      dailyLimit: MAX_DAILY,
+      monthlyLimit: MAX_MONTHLY,
+    };
   });
 
 export const getGenerationStats = createServerFn({ method: "GET" })
