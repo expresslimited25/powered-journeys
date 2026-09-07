@@ -59,7 +59,7 @@ function DiscoverPage() {
   const [idea, setIdea] = useState<Inspiration | null>(null);
   const [thinking, setThinking] = useState(false);
 
-  const { data: posts, isLoading } = useQuery({
+  const { data: posts, isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ["discover"],
     queryFn: async () => {
       const { data, error } = await supabase
