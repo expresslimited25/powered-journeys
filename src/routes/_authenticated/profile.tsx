@@ -32,6 +32,57 @@ function ProfilePage() {
   const { profile } = useAuthUser();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const fetchUsage = useServerFn(getMyGenerationUsage);
+  const [editing, setEditing] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [avatarDraft, setAvatarDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const { data: usage } = useQuery({
+    queryKey: ["generation-usage"],
+    queryFn: () => fetchUsage({ data: undefined }),
+  });
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("has_role", {
+        _user_id: profile!.id,
+        _role: "admin",
+      });
+      return data === true;
+    },
+  });
+
+  function startEditing() {
+    setNameDraft(profile?.name ?? "");
+    setAvatarDraft(profile?.avatar_url ?? "");
+    setEditing(true);
+  }
+
+  async function saveProfile() {
+    setSaving(true);
+    const name = nameDraft.trim();
+    const avatar = avatarDraft.trim();
+    const { error } = await supabase.auth.updateUser({
+      data: { full_name: name, name, avatar_url: avatar || null },
+    });
+    if (!error) {
+      await supabase
+        .from("profiles")
+        .update({ name: name || null, avatar_url: avatar || null })
+        .eq("id", profile!.id);
+    }
+    setSaving(false);
+    if (error) {
+      toast.error("Could not save your details.");
+      return;
+    }
+    setEditing(false);
+    toast.success("Profile updated");
+  }
+
 
   const { data: trips, isLoading } = useQuery({
     queryKey: ["trips"],
