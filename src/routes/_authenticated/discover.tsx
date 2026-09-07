@@ -183,6 +183,18 @@ function DiscoverPage() {
             <Skeleton className="h-56 rounded-xl" />
             <Skeleton className="h-56 rounded-xl" />
           </div>
+        ) : error ? (
+          <Card className="p-8 text-center">
+            <p className="font-display text-lg">We couldn't load the feed</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Check your connection and try again.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+                {isFetching ? <Loader2 className="size-4 animate-spin" /> : null} Try again
+              </Button>
+            </div>
+          </Card>
         ) : filtered.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {filtered.map((post) => (
