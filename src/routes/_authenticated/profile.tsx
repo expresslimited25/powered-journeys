@@ -1,14 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Globe2, LogOut, Share2, Trash2 } from "lucide-react";
+import { Globe2, LogOut, Pencil, Share2, ShieldCheck, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/BottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthUser } from "@/hooks/useAuthUser";
+import { getMyGenerationUsage } from "@/lib/generation.functions";
 import { formatRange, type TripRow } from "@/lib/itinerary";
 
 export const Route = createFileRoute("/_authenticated/profile")({
