@@ -1,8 +1,8 @@
 # Wandr — next improvements roadmap
 
-- [ ] 1. Verify generation queue E2E + grant admin role + admin link on Profile
-- [ ] 2. Trip cover photos (AI-generated, cached per destination, Storage)
-- [ ] 3. Profile polish: usage display + edit name/avatar
-- [ ] 4. Discover polish: retry/error, empty state, per-post share link
-- [ ] 5. UX/SEO pass + ink-gold favicon
-- [ ] 6. Verify: typecheck/build + Playwright signed-in run
+- [x] 1. Admin role granted + admin link on Profile (queue E2E still unverified with real AI)
+- [x] 2. Trip cover photos (AI-generated, cached per destination, Storage)
+- [x] 3. Profile polish: usage display + edit name/avatar
+- [x] 4. Discover polish: retry/error state + per-post share link
+- [x] 5. UX/SEO pass + ink-gold favicon
+- [ ] 6. Verify: signed-in Playwright run incl. one real trip generation

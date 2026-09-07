@@ -1,14 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Globe2, LogOut, Share2, Trash2 } from "lucide-react";
+import { Globe2, LogOut, Pencil, Share2, ShieldCheck, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/BottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthUser } from "@/hooks/useAuthUser";
+import { getMyGenerationUsage } from "@/lib/generation.functions";
 import { formatRange, type TripRow } from "@/lib/itinerary";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -27,6 +32,57 @@ function ProfilePage() {
   const { profile } = useAuthUser();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const fetchUsage = useServerFn(getMyGenerationUsage);
+  const [editing, setEditing] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [avatarDraft, setAvatarDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const { data: usage } = useQuery({
+    queryKey: ["generation-usage"],
+    queryFn: () => fetchUsage({ data: undefined }),
+  });
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("has_role", {
+        _user_id: profile!.id,
+        _role: "admin",
+      });
+      return data === true;
+    },
+  });
+
+  function startEditing() {
+    setNameDraft(profile?.name ?? "");
+    setAvatarDraft(profile?.avatar_url ?? "");
+    setEditing(true);
+  }
+
+  async function saveProfile() {
+    setSaving(true);
+    const name = nameDraft.trim();
+    const avatar = avatarDraft.trim();
+    const { error } = await supabase.auth.updateUser({
+      data: { full_name: name, name, avatar_url: avatar || null },
+    });
+    if (!error) {
+      await supabase
+        .from("profiles")
+        .update({ name: name || null, avatar_url: avatar || null })
+        .eq("id", profile!.id);
+    }
+    setSaving(false);
+    if (error) {
+      toast.error("Could not save your details.");
+      return;
+    }
+    setEditing(false);
+    toast.success("Profile updated");
+  }
+
 
   const { data: trips, isLoading } = useQuery({
     queryKey: ["trips"],
@@ -83,16 +139,75 @@ function ProfilePage() {
   return (
     <AppShell>
       <div className="space-y-8">
-        <Card className="flex flex-row items-center gap-4 p-5">
-          <Avatar className="size-14">
-            <AvatarImage src={profile?.avatar_url ?? undefined} alt="" />
-            <AvatarFallback>{(profile?.name ?? "W").slice(0, 1)}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate font-display text-xl">{profile?.name}</p>
-            <p className="truncate text-sm text-muted-foreground">{profile?.email}</p>
+        <Card className="gap-4 p-5">
+          <div className="flex flex-row items-center gap-4">
+            <Avatar className="size-14">
+              <AvatarImage src={profile?.avatar_url ?? undefined} alt="" />
+              <AvatarFallback>{(profile?.name ?? "W").slice(0, 1)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-display text-xl">{profile?.name}</p>
+              <p className="truncate text-sm text-muted-foreground">{profile?.email}</p>
+            </div>
+            {!editing ? (
+              <Button variant="ghost" size="icon" aria-label="Edit profile" onClick={startEditing}>
+                <Pencil className="size-4" />
+              </Button>
+            ) : null}
           </div>
+
+          {editing ? (
+            <div className="space-y-3">
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="Your name"
+                aria-label="Your name"
+              />
+              <Input
+                value={avatarDraft}
+                onChange={(e) => setAvatarDraft(e.target.value)}
+                placeholder="Photo link (optional)"
+                aria-label="Photo link"
+              />
+              <div className="flex gap-2">
+                <Button onClick={saveProfile} disabled={saving}>
+                  {saving ? "Saving…" : "Save"}
+                </Button>
+                <Button variant="outline" onClick={() => setEditing(false)} disabled={saving}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </Card>
+
+        {usage ? (
+          <Card className="gap-3 p-5">
+            <h2 className="font-display text-xl">Your plan usage</h2>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {usage.daily} of {usage.dailyLimit} plans used today
+              </p>
+              <Progress value={(usage.daily / usage.dailyLimit) * 100} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {usage.monthly} of {usage.monthlyLimit} plans used this month
+              </p>
+              <Progress value={(usage.monthly / usage.monthlyLimit) * 100} />
+            </div>
+          </Card>
+        ) : null}
+
+        {isAdmin ? (
+          <Button asChild variant="outline" className="w-full">
+            <Link to="/admin">
+              <ShieldCheck className="size-4" /> Generation status
+            </Link>
+          </Button>
+        ) : null}
+
 
         <section className="space-y-3">
           <h2 className="font-display text-xl">My Itineraries</h2>

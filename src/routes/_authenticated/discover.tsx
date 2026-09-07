@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Share2, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/BottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,7 @@ function DiscoverPage() {
   const [idea, setIdea] = useState<Inspiration | null>(null);
   const [thinking, setThinking] = useState(false);
 
-  const { data: posts, isLoading } = useQuery({
+  const { data: posts, isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ["discover"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -183,6 +183,18 @@ function DiscoverPage() {
             <Skeleton className="h-56 rounded-xl" />
             <Skeleton className="h-56 rounded-xl" />
           </div>
+        ) : error ? (
+          <Card className="p-8 text-center">
+            <p className="font-display text-lg">We couldn't load the feed</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Check your connection and try again.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+                {isFetching ? <Loader2 className="size-4 animate-spin" /> : null} Try again
+              </Button>
+            </div>
+          </Card>
         ) : filtered.length ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {filtered.map((post) => (
@@ -253,12 +265,34 @@ function PostCard({ post }: { post: Post }) {
             </Badge>
           ))}
         </div>
-        <div className="flex items-center gap-2 pt-1">
-          <Avatar className="size-6">
-            <AvatarImage src={post.profiles?.avatar_url ?? undefined} alt="" />
-            <AvatarFallback>{(post.profiles?.name ?? "W").slice(0, 1)}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground">{post.profiles?.name ?? "Traveller"}</span>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar className="size-6">
+              <AvatarImage src={post.profiles?.avatar_url ?? undefined} alt="" />
+              <AvatarFallback>{(post.profiles?.name ?? "W").slice(0, 1)}</AvatarFallback>
+            </Avatar>
+            <span className="truncate text-xs text-muted-foreground">
+              {post.profiles?.name ?? "Traveller"}
+            </span>
+          </div>
+          {token ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Copy link to this trip"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const url = `${window.location.origin}/share/${token}`;
+                navigator.clipboard
+                  .writeText(url)
+                  .then(() => toast.success("Link copied"))
+                  .catch(() => toast.success(`Link: ${url}`));
+              }}
+            >
+              <Share2 className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </div>
     </Card>
