@@ -139,16 +139,75 @@ function ProfilePage() {
   return (
     <AppShell>
       <div className="space-y-8">
-        <Card className="flex flex-row items-center gap-4 p-5">
-          <Avatar className="size-14">
-            <AvatarImage src={profile?.avatar_url ?? undefined} alt="" />
-            <AvatarFallback>{(profile?.name ?? "W").slice(0, 1)}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate font-display text-xl">{profile?.name}</p>
-            <p className="truncate text-sm text-muted-foreground">{profile?.email}</p>
+        <Card className="gap-4 p-5">
+          <div className="flex flex-row items-center gap-4">
+            <Avatar className="size-14">
+              <AvatarImage src={profile?.avatar_url ?? undefined} alt="" />
+              <AvatarFallback>{(profile?.name ?? "W").slice(0, 1)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-display text-xl">{profile?.name}</p>
+              <p className="truncate text-sm text-muted-foreground">{profile?.email}</p>
+            </div>
+            {!editing ? (
+              <Button variant="ghost" size="icon" aria-label="Edit profile" onClick={startEditing}>
+                <Pencil className="size-4" />
+              </Button>
+            ) : null}
           </div>
+
+          {editing ? (
+            <div className="space-y-3">
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="Your name"
+                aria-label="Your name"
+              />
+              <Input
+                value={avatarDraft}
+                onChange={(e) => setAvatarDraft(e.target.value)}
+                placeholder="Photo link (optional)"
+                aria-label="Photo link"
+              />
+              <div className="flex gap-2">
+                <Button onClick={saveProfile} disabled={saving}>
+                  {saving ? "Saving…" : "Save"}
+                </Button>
+                <Button variant="outline" onClick={() => setEditing(false)} disabled={saving}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </Card>
+
+        {usage ? (
+          <Card className="gap-3 p-5">
+            <h2 className="font-display text-xl">Your plan usage</h2>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {usage.daily} of {usage.dailyLimit} plans used today
+              </p>
+              <Progress value={(usage.daily / usage.dailyLimit) * 100} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {usage.monthly} of {usage.monthlyLimit} plans used this month
+              </p>
+              <Progress value={(usage.monthly / usage.monthlyLimit) * 100} />
+            </div>
+          </Card>
+        ) : null}
+
+        {isAdmin ? (
+          <Button asChild variant="outline" className="w-full">
+            <Link to="/admin">
+              <ShieldCheck className="size-4" /> Generation status
+            </Link>
+          </Button>
+        ) : null}
+
 
         <section className="space-y-3">
           <h2 className="font-display text-xl">My Itineraries</h2>
