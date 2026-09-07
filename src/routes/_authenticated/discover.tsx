@@ -265,12 +265,34 @@ function PostCard({ post }: { post: Post }) {
             </Badge>
           ))}
         </div>
-        <div className="flex items-center gap-2 pt-1">
-          <Avatar className="size-6">
-            <AvatarImage src={post.profiles?.avatar_url ?? undefined} alt="" />
-            <AvatarFallback>{(post.profiles?.name ?? "W").slice(0, 1)}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground">{post.profiles?.name ?? "Traveller"}</span>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar className="size-6">
+              <AvatarImage src={post.profiles?.avatar_url ?? undefined} alt="" />
+              <AvatarFallback>{(post.profiles?.name ?? "W").slice(0, 1)}</AvatarFallback>
+            </Avatar>
+            <span className="truncate text-xs text-muted-foreground">
+              {post.profiles?.name ?? "Traveller"}
+            </span>
+          </div>
+          {token ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Copy link to this trip"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const url = `${window.location.origin}/share/${token}`;
+                navigator.clipboard
+                  .writeText(url)
+                  .then(() => toast.success("Link copied"))
+                  .catch(() => toast.success(`Link: ${url}`));
+              }}
+            >
+              <Share2 className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </div>
     </Card>
